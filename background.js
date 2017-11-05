@@ -1,10 +1,26 @@
+/**
+ * This runs in the background of Chrome all the time,
+ * There is only one instance of this, for all tabs and windows.
+ * It needs to know how to communicate with multiple tabs, and handle
+ * each tab doing their own thing with sound channels.
+ */
+
+// init the Web Audio API (AudioContext)
 var audioCtx = new (window.AudioContext)();
 
-// key'd by tab ids, values are {source, splitter, gainLeft, gainRight, dir}
+// key'd by tab ids, values are objects of {source, splitter, gainLeft, gainRight, dir}
 var audioNodes = {};
 
-chrome.extension.onConnect.addListener(function(port) {
-  // first, make sure disconnect handler sets all our vars back to null
+/**
+ * Everything operates based on the user initiating the extension's popup.
+ * Listen for the popup to establish a connection with us (background.js).
+ */
+chrome.extension.onConnect.addListener(function(clientPopup) {
+
+  /**
+   * When tab capture is stopped, be sure to disconnect all nodes to
+   * return audio to normal, and clean up our objects and memory use.
+   */
   chrome.tabCapture.onStatusChanged.addListener(function(info) {
     if (info.status === 'stopped' && tabId === info.tabId) {
       audioNodes[tabIdRemoved].source.disconnect();
@@ -14,6 +30,11 @@ chrome.extension.onConnect.addListener(function(port) {
       delete audioNodes[tabIdRemoved];
     }
   });
+
+  /**
+   * When a tab is closed, also be sure to disconnect all nodes to
+   * return audio to normal, and clean up our objects and memory use.
+   */
   chrome.tabs.onRemoved.addListener(function(tabIdRemoved, removed) {
     if (audioNodes[tabIdRemoved]) {
       audioNodes[tabIdRemoved].source.disconnect();
@@ -23,12 +44,21 @@ chrome.extension.onConnect.addListener(function(port) {
       delete audioNodes[tabIdRemoved];
     }
   })
-  // now listens for any messages from popup
-  port.onMessage.addListener(function(msg) {
+
+  /**
+   * Listen to start event or commands from a popup client.
+   */
+  clientPopup.onMessage.addListener(function(msg) {
     var tabId = msg.tabId;
+
+    /**
+     * Popup client was just opened
+     */
     if (msg.action === 'start') {
       if (!audioNodes[tabId]) {
-        // hook up all the existing audios on the page with web audio context
+        // First time this tab is opening the popup client.
+        // Hook up audios on the page with some new audio nodes,
+        // using tabCapture to get an audio stream
         chrome.tabCapture.capture({
             audio : true,
             video : false
@@ -47,11 +77,16 @@ chrome.extension.onConnect.addListener(function(port) {
           }
         );
       } else {
-        // already have sources, let UI know of current status
-        port.postMessage({dir: audioNodes[tabId].dir});
+        // This tab has opened the popup client before and we have audio nodes
+        // created already, let UI know of current status
+        clientPopup.postMessage({dir: audioNodes[tabId].dir});
       }
-    } else if (msg.action === 'change') {
-      // actually change channel
+    }
+
+    /**
+     * Popup client issued a command to change sound channels
+     */
+    else if (msg.action === 'change') {
       if (!msg.dir || msg.dir === 'none') {
         audioNodes[tabId].gainLeft.gain.value = 1;
         audioNodes[tabId].gainRight.gain.value = 1;

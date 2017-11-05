@@ -1,9 +1,18 @@
-var port = chrome.extension.connect();
+/**
+ * This script runs inside the popup box (popup.html).
+ * Establishes a port connection to the Chrome extension background.js
+ * to issue commands (upon clicking buttons) or retrieve
+ * current status.
+ */
+var extBackground = chrome.extension.connect();
 var isMono = false;
 
-// this listens to extension background for current channel status
-// and makes UI appear correct to start
-port.onMessage.addListener(function(msg) {
+/**
+ * Listens to Extension background.js for current channel status,
+ * so that the UI will appear correctly if this isn't the first
+ * time the user opens the popup on this tab.
+ */
+extBackground.onMessage.addListener(function(msg) {
   if (msg && msg.dir) {
     document.querySelectorAll('button').forEach(function(item) {
       item.classList.remove('active')
@@ -17,13 +26,19 @@ port.onMessage.addListener(function(msg) {
   }
 });
 
-// tells extension to hook up audio context for current tab if needed
+/**
+ * Lets background.js know this popup is ready, either start the work
+ * by hooking up all the audio nodes from the page, or if already hooked
+ * up before, retrieve current status for display.
+ */
 chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
   var currentTab = tabs[0];
-  port.postMessage({action: 'start', tabId: currentTab.id});
+  extBackground.postMessage({action: 'start', tabId: currentTab.id});
 });
 
-// click handler for UI
+/**
+ * Handler for our popup page's UI buttons.
+ */
 var buttonHandler = function(e) {
   var clickedDirection = e.target.id;
   if (isMono === clickedDirection) {
@@ -44,7 +59,7 @@ var buttonHandler = function(e) {
   }
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
     var currentTab = tabs[0];
-    port.postMessage({action: 'change', tabId: currentTab.id, dir: clickedDirection});
+    extBackground.postMessage({action: 'change', tabId: currentTab.id, dir: clickedDirection});
   });  
 };
 document.getElementById('left').addEventListener('click', buttonHandler);
