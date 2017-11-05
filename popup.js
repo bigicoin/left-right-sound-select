@@ -17,8 +17,11 @@ port.onMessage.addListener(function(msg) {
   }
 });
 
-// tells extension UI is ready and hook up audio context if needed
-port.postMessage({action: 'start'});
+// tells extension to hook up audio context for current tab if needed
+chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+  var currentTab = tabs[0];
+  port.postMessage({action: 'start', tabId: currentTab.id});
+});
 
 // click handler for UI
 var buttonHandler = function(e) {
@@ -29,7 +32,7 @@ var buttonHandler = function(e) {
       item.classList.remove('active')
     });
     isMono = false;
-    port.postMessage({action: 'change', dir: 'none'});
+    clickedDirection = 'none';
   } else {
     // clicking from stereo to mono, or,
     // clicking from one mono dir to another dir
@@ -38,8 +41,11 @@ var buttonHandler = function(e) {
     });
     document.getElementById(clickedDirection).classList.add('active');
     isMono = clickedDirection;
-    port.postMessage({action: 'change', dir: clickedDirection});
   }
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    var currentTab = tabs[0];
+    port.postMessage({action: 'change', tabId: currentTab.id, dir: clickedDirection});
+  });  
 };
 document.getElementById('left').addEventListener('click', buttonHandler);
 document.getElementById('right').addEventListener('click', buttonHandler);
