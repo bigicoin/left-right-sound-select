@@ -11,8 +11,9 @@ var isMono = false;
 chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
   // popup is generally tab-agnostic, so need to get the tab that is active
   var currentTab = tabs[0];
-  chrome.runtime.sendMessage(
-    {action: 'start', tab: currentTab},
+  chrome.tabs.sendMessage(
+    currentTab.id,
+    {action: 'start'},
     /**
      * Get current channel status
      * So that the UI will appear correctly if this isn't the first
@@ -67,7 +68,7 @@ var buttonHandler = function(e) {
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
     // popup is generally tab-agnostic, so need to get the tab that is active
     var currentTab = tabs[0];
-    chrome.runtime.sendMessage({action: 'change', tab: currentTab, dir: clickedDirection});
+    chrome.tabs.sendMessage(currentTab.id, {action: 'change', dir: clickedDirection});
   });  
 };
 document.getElementById('left').addEventListener('click', buttonHandler);

@@ -4,14 +4,17 @@
   "version": "0.0.1",
   "permissions": [
     "activeTab",
-    "tabCapture"
+    "tabCapture",
+    "<all_urls>"
   ],
-  "background":{
-    "scripts": ["background.js"]
-  },
-  "externally_connectable": {
-    "matches": ["*://*.youtube.com/*"]
-  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["contentscript.js"],
+      "run_at": "document_end",
+      "all_frames": true
+    }
+  ],
   "browser_action": {
     "default_icon": {
       "256": "sound.png"
