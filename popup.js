@@ -4,7 +4,7 @@
  * to issue commands (upon clicking buttons) or retrieve
  * current status.
  */
-var extBackground = chrome.extension.connect();
+var extBackground = chrome.runtime.connect();
 var isMono = false;
 
 /**
@@ -32,6 +32,7 @@ extBackground.onMessage.addListener(function(msg) {
  * up before, retrieve current status for display.
  */
 chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+  // popup is generally tab-agnostic, so need to get the tab that is active
   var currentTab = tabs[0];
   extBackground.postMessage({action: 'start', tabId: currentTab.id});
 });
@@ -58,6 +59,7 @@ var buttonHandler = function(e) {
     isMono = clickedDirection;
   }
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    // popup is generally tab-agnostic, so need to get the tab that is active
     var currentTab = tabs[0];
     extBackground.postMessage({action: 'change', tabId: currentTab.id, dir: clickedDirection});
   });  

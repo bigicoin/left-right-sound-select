@@ -15,19 +15,19 @@ var audioNodes = {};
  * Everything operates based on the user initiating the extension's popup.
  * Listen for the popup to establish a connection with us (background.js).
  */
-chrome.extension.onConnect.addListener(function(clientPopup) {
+chrome.runtime.onConnect.addListener(function(clientPopup) {
 
   /**
    * When tab capture is stopped, be sure to disconnect all nodes to
    * return audio to normal, and clean up our objects and memory use.
    */
   chrome.tabCapture.onStatusChanged.addListener(function(info) {
-    if (info.status === 'stopped' && tabId === info.tabId) {
-      audioNodes[tabIdRemoved].source.disconnect();
-      audioNodes[tabIdRemoved].splitter.disconnect();
-      audioNodes[tabIdRemoved].gainLeft.disconnect();
-      audioNodes[tabIdRemoved].gainRight.disconnect();
-      delete audioNodes[tabIdRemoved];
+    if (info.status === 'stopped') {
+      audioNodes[info.tabId].source.disconnect();
+      audioNodes[info.tabId].splitter.disconnect();
+      audioNodes[info.tabId].gainLeft.disconnect();
+      audioNodes[info.tabId].gainRight.disconnect();
+      delete audioNodes[info.tabId];
     }
   });
 
@@ -48,8 +48,22 @@ chrome.extension.onConnect.addListener(function(clientPopup) {
   /**
    * Listen to start event or commands from a popup client.
    */
-  clientPopup.onMessage.addListener(function(msg) {
-    var tabId = msg.tabId;
+  clientPopup.onMessage.addListener(function(msg, port) {
+    var tabId = null;
+
+    if (port.sender.tab && port.sender.tab.id) {
+      // should be the case of coming from content script
+      tabId = port.sender.tab.id;
+    } else if (!port.sender.tab && msg.tabId) {
+      // should be the case of coming from popup script
+      tabId = msg.tabId;
+    }
+
+    if (!tabId) {
+      // if cannot figure out what tab this command or event comes from
+      // we cannot do anything.
+      return;
+    }
 
     /**
      * Popup client was just opened
