@@ -17,7 +17,12 @@ extBackground.onMessage.addListener(function(msg) {
     document.querySelectorAll('button').forEach(function(item) {
       item.classList.remove('active')
     });
-    if (msg.dir === 'none') {
+    if (msg.dir === 'fail') {
+      isMono = false;
+      document.querySelectorAll('button').forEach(function(item) {
+        item.disabled = 'disabled';
+      });
+    } else if (msg.dir === 'none') {
       isMono = false;
     } else {
       isMono = msg.dir;
@@ -34,7 +39,7 @@ extBackground.onMessage.addListener(function(msg) {
 chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
   // popup is generally tab-agnostic, so need to get the tab that is active
   var currentTab = tabs[0];
-  extBackground.postMessage({action: 'start', tabId: currentTab.id});
+  extBackground.postMessage({action: 'start', tab: currentTab});
 });
 
 /**
@@ -61,7 +66,7 @@ var buttonHandler = function(e) {
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
     // popup is generally tab-agnostic, so need to get the tab that is active
     var currentTab = tabs[0];
-    extBackground.postMessage({action: 'change', tabId: currentTab.id, dir: clickedDirection});
+    extBackground.postMessage({action: 'change', tab: currentTab, dir: clickedDirection});
   });  
 };
 document.getElementById('left').addEventListener('click', buttonHandler);

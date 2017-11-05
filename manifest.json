@@ -3,20 +3,15 @@
   "name": "Left Right Sound Select",
   "version": "0.0.1",
   "permissions": [
-    "tabCapture",
-    "activeTab"
+    "activeTab",
+    "tabCapture"
   ],
   "background":{
     "scripts": ["background.js"]
   },
-  "content_scripts": [
-    {
-      "matches": ["http://*/*", "https://*/*"],
-      "run_at": "document_start",
-      "js": ["contentscript.js"],
-      "all_frames": false
-    }
-  ],
+  "externally_connectable": {
+    "matches": ["*://*.youtube.com/*"]
+  },
   "browser_action": {
     "default_icon": {
       "256": "sound.png"
