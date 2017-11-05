@@ -4,8 +4,7 @@
   "version": "0.0.1",
   "permissions": [
     "tabCapture",
-    "activeTab",
-    "alarms"
+    "activeTab"
   ],
   "background":{
     "scripts": ["background.js"]
