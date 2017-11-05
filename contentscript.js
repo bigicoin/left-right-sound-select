@@ -75,18 +75,16 @@ function processMessage(msg, callback) {
      * If called second time or more, simply return current dir.
      */
     if (msg.action === 'start') {
+      var currentDir;
       if (!started) {
-        for (var i = 0; i < domNodes.length; i++) {
-          hookUpWebAudio(domNodes[i]);
-        }
-        started = true;
-        debug('start: hooked up all web audio nodes');
+        currentDir = 'none';
       } else {
-        if (callback) {
-          callback({dir: dir});
-        }
-        debug('start: reporting back current dir: ' + dir);
+        currentDir = dir;
       }
+      if (callback) {
+        callback({dir: currentDir});
+      }
+      debug('start: reporting back current dir: ' + currentDir);
     }
 
     /**
@@ -94,6 +92,14 @@ function processMessage(msg, callback) {
      * web audio nodes.
      */
     else if (msg.action === 'change') {
+      // if first command, hook up web audio nodes first
+      if (!started) {
+        for (var i = 0; i < domNodes.length; i++) {
+          hookUpWebAudio(domNodes[i]);
+        }
+        started = true;
+      }
+      // issue adjust channel commandd
       dir = msg.dir;
       if (dir !== 'none' && dir !== 'left' && dir !== 'right') {
         dir = 'none';
@@ -116,7 +122,6 @@ chrome.runtime.onMessage.addListener(function(msg, sender, callback) {
 /**
  * For sites that support this plugin, they can just fire a custom event,
  * in order to trigger sound change, like this:
-window.dispatchEvent( new CustomEvent('leftRightSoundEvent', { detail: {action: 'start'} }) );
 window.dispatchEvent( new CustomEvent('leftRightSoundEvent', { detail: {action: 'change', dir: 'right'} }) );
  */
 window.addEventListener('leftRightSoundEvent', function(e) {
