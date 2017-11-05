@@ -17,11 +17,11 @@ button {
   height: 50px;
   text-align: center;
   vertical-align: center;
-  font-size: 16px;
+  font-size: 24px;
   font-family: sans-serif;
   background-color: #fff;
   color: #999;
-  border-color: #999;
+  border-color: #bbb;
   border-radius: 3px;
   border-width: 1px;
   border-style: solid;
@@ -34,13 +34,54 @@ button.active {
   border-color: #009e3a;
 }
 
+@font-face {
+  font-family: 'icomoon';
+  src: url('icomoon.eot?5prtgz');
+  src: url('icomoon.eot?5prtgz#iefix') format('embedded-opentype'),
+    url('icomoon.ttf?5prtgz') format('truetype'),
+    url('icomoon.woff?5prtgz') format('woff'),
+    url('icomoon.svg?5prtgz#icomoon') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+[class^="icon-"], [class*=" icon-"] {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'icomoon' !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-volume:before {
+  content: "\ea27";
+}
+
+button div, button div span {
+  pointer-events: none;
+}
+
+#left div {
+  -moz-transform: scale(-1, 1);
+  -webkit-transform: scale(-1, 1);
+  -o-transform: scale(-1, 1);
+  -ms-transform: scale(-1, 1);
+  transform: scale(-1, 1);
+}
+
 </style>
 
 </head>
 <body>
 
-<button id="left">Left</button>
-<button id="right">Right</button>
+<button id="left"><div><span class="icon-volume"></span></div></button>
+<button id="right"><div><span class="icon-volume"></span></div></button>
 <script src="popup.js"></script>
 
 </body>
