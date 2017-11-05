@@ -12,68 +12,54 @@ var audioCtx = new (window.AudioContext)();
 var audioNodes = {};
 
 /**
- * Everything operates based on the user initiating the extension's popup.
- * Listen for the popup to establish a connection with us (background.js).
+ * When tab capture is stopped, be sure to disconnect all nodes to
+ * return audio to normal, and clean up our objects and memory use.
  */
-chrome.runtime.onConnect.addListener(function(clientPort) {
-
-  /**
-   * When tab capture is stopped, be sure to disconnect all nodes to
-   * return audio to normal, and clean up our objects and memory use.
-   */
-  chrome.tabCapture.onStatusChanged.addListener(function(info) {
-    if (info.status === 'stopped') {
-      if (audioNodes[info.tabId]) {
-        audioNodes[info.tabId].source.disconnect();
-        audioNodes[info.tabId].splitter.disconnect();
-        audioNodes[info.tabId].gainLeft.disconnect();
-        audioNodes[info.tabId].gainRight.disconnect();
-        delete audioNodes[info.tabId];
-      }
+chrome.tabCapture.onStatusChanged.addListener(function(info) {
+  if (info.status === 'stopped') {
+    if (audioNodes[info.tabId]) {
+      audioNodes[info.tabId].source.disconnect();
+      audioNodes[info.tabId].splitter.disconnect();
+      audioNodes[info.tabId].gainLeft.disconnect();
+      audioNodes[info.tabId].gainRight.disconnect();
+      delete audioNodes[info.tabId];
     }
-  });
+  }
+});
 
-  /**
-   * When a tab is closed, also be sure to disconnect all nodes to
-   * return audio to normal, and clean up our objects and memory use.
-   */
-  chrome.tabs.onRemoved.addListener(function(tabIdRemoved, removed) {
-    if (audioNodes[tabIdRemoved]) {
-      audioNodes[tabIdRemoved].source.disconnect();
-      audioNodes[tabIdRemoved].splitter.disconnect();
-      audioNodes[tabIdRemoved].gainLeft.disconnect();
-      audioNodes[tabIdRemoved].gainRight.disconnect();
-      delete audioNodes[tabIdRemoved];
-    }
-  })
+/**
+ * When a tab is closed, also be sure to disconnect all nodes to
+ * return audio to normal, and clean up our objects and memory use.
+ */
+chrome.tabs.onRemoved.addListener(function(tabIdRemoved, removed) {
+  if (audioNodes[tabIdRemoved]) {
+    audioNodes[tabIdRemoved].source.disconnect();
+    audioNodes[tabIdRemoved].splitter.disconnect();
+    audioNodes[tabIdRemoved].gainLeft.disconnect();
+    audioNodes[tabIdRemoved].gainRight.disconnect();
+    delete audioNodes[tabIdRemoved];
+  }
+})
 
-  /**
-   * Listen to start event or commands from a popup client.
-   */
-  clientPort.onMessage.addListener(function(msg, port) {
-    var tab = null;
+/**
+ * Listen to start event or commands from a popup client.
+ */
+chrome.runtime.onMessage.addListener(function(msg, sender, callback) {
+  var tab = null;
 
-    // this is the case of a message coming from content script.
-    // not used for now -- we are no longer using content scripts.
-    /*
-    if (port.sender.tab) {
-      tab = port.sender.tab;
-    }
-    */
-    // message comes from popup, always includes a tab in msg
-    // because popup figures out its own tab id with chrome.tabs.query.
-    if (msg.tab) {
-      tab = msg.tab;
-    }
+  // message comes from popup, always includes a tab in msg
+  // because popup figures out its own tab id with chrome.tabs.query.
+  if (msg.tab) {
+    tab = msg.tab;
+  }
 
-    if (!tab) {
-      // if cannot figure out what tab this command or event comes from
-      // we cannot do anything.
-      return;
-    }
+  if (!tab) {
+    // if cannot figure out what tab this command or event comes from
+    // we cannot do anything.
+    return;
+  }
 
-    processMessage(msg, tab, clientPort);
-  });
+  processMessage(msg, tab, callback);
 });
 
 /**
@@ -83,7 +69,7 @@ chrome.runtime.onConnect.addListener(function(clientPort) {
 chrome.runtime.sendMessage('jhkelnemcoamgbglhfejoillakdbbjed', {action: 'start'});
 chrome.runtime.sendMessage('jhkelnemcoamgbglhfejoillakdbbjed', {action: 'change', dir: 'right'});
  */
-chrome.runtime.onMessageExternal.addListener(function(msg, sender, sendResponse) {
+chrome.runtime.onMessageExternal.addListener(function(msg, sender, callback) {
   var tab = null;
 
   // for external messaging, the tab id should come in as sender.tab.id
@@ -100,7 +86,7 @@ chrome.runtime.onMessageExternal.addListener(function(msg, sender, sendResponse)
   processMessage(msg, tab, null);
 });
 
-function processMessage(msg, tab, clientPort) {
+function processMessage(msg, tab, callback) {
   /**
    * Popup client was just opened.
    */
@@ -123,16 +109,16 @@ function processMessage(msg, tab, clientPort) {
           audioNodes[tab.id].gainRight.connect(audioCtx.destination, 0);
           audioNodes[tab.id].dir = 'none';
         } else {
-          if (clientPort) {
-            clientPort.postMessage({dir: 'fail'});
+          if (callback) {
+            callback({dir: 'fail'});
           }
         }
       });
     } else {
       // This tab has opened the popup client before and we have audio nodes
       // created already, let UI know of current status
-      if (clientPort) {
-        clientPort.postMessage({dir: audioNodes[tab.id].dir});
+      if (callback) {
+        callback({dir: audioNodes[tab.id].dir});
       }
     }
   }
