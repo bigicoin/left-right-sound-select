@@ -107,6 +107,7 @@ function processMessage(msg, callback) {
       for (var i = 0; i < audioNodes.length; i++) {
         adjustChannel(audioNodes[i]);
       }
+      window.dispatchEvent( new CustomEvent('leftRightSoundOnChange', { detail: {dir: dir} }) );
       debug('changed all directions to ' + dir);
     }
   }
