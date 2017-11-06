@@ -70,9 +70,9 @@ function debug(val) {
 function processMessage(msg, callback) {
   if (msg.action) {
     /**
-     * Start action, hook up all discovered <video> and <audio> DOM nodes
-     * with Web Audio if called first time.
-     * If called second time or more, simply return current dir.
+     * Start action, called by popup.js when the extension popup is opened.
+     * Return current mono direction on tab/frame so the popup can display
+     * the current direction properly.
      */
     if (msg.action === 'start') {
       var currentDir;
@@ -126,7 +126,11 @@ window.dispatchEvent( new CustomEvent('leftRightSoundEvent', { detail: {action: 
  */
 window.addEventListener('leftRightSoundEvent', function(e) {
   var msg = e.detail;
-  processMessage(msg, null);
+  // instead of calling processMessage() directly, we want to apply the command
+  // to all frames on the tab, instead of just the current frame this is on.
+  // so, we need to pass the message to background.js first, and let background.js
+  // issue a central command from there to all frames on this tab.
+  chrome.runtime.sendMessage(msg);
 });
 
 /**
