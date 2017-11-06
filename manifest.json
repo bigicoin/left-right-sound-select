@@ -1,6 +1,8 @@
 {
   "manifest_version": 2,
   "name": "Left Right Sound Select",
+  "short_name": "Left Right Sound Select",
+  "description": "Allow you to easily change stereo sound on web sites to mono left/right with one click. Useful for videos with dual-language tracks.",
   "version": "0.0.1",
   "background":{
     "scripts": ["background.js"]
